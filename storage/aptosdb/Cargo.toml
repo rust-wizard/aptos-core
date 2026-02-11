@@ -66,10 +66,12 @@ aptos-schemadb = { workspace = true, features = ["fuzzing"] }
 aptos-scratchpad = { workspace = true, features = ["fuzzing"] }
 aptos-temppath = { workspace = true }
 aptos-types = { workspace = true }
+criterion = { workspace = true }
 ouroboros = { workspace = true }
 proptest = { workspace = true }
 proptest-derive = { workspace = true }
 rand = { workspace = true }
+tempfile = { workspace = true }
 
 [features]
 default = []

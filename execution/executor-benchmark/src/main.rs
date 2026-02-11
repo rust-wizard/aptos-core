@@ -14,7 +14,7 @@ use aptos_config::config::{
 };
 use aptos_executor_benchmark::{
     default_benchmark_features,
-    jmt_sharding_benchmark::benchmark_jmt_sharding,
+    jmt_sharding_benchmark::{benchmark_jmt_sharding, generate_comparative_report},
     native::{
         aptos_vm_uncoordinated::AptosVMParallelUncoordinatedBlockExecutor,
         native_config::NativeConfig,
@@ -608,7 +608,7 @@ where
             data_dir,
         } => {
             // Run JMT sharding benchmark with sharding enabled
-            benchmark_jmt_sharding(
+            let result_with_sharding = benchmark_jmt_sharding(
                 num_accounts,
                 num_operations,
                 block_size,
@@ -617,13 +617,16 @@ where
             );
             
             // Run JMT sharding benchmark with sharding disabled for comparison
-            benchmark_jmt_sharding(
+            let result_without_sharding = benchmark_jmt_sharding(
                 num_accounts,
                 num_operations,
                 block_size,
                 data_dir,
                 false, // enable_storage_sharding
             );
+            
+            // Generate comparative report
+            generate_comparative_report(result_with_sharding, result_without_sharding);
         },
     }
 }

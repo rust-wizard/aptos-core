@@ -1291,6 +1291,7 @@ dependencies = [
  "byteorder",
  "claims",
  "clap 4.5.21",
+ "criterion",
  "crossbeam-channel",
  "dashmap 7.0.0-rc2",
  "either",
@@ -1309,6 +1310,7 @@ dependencies = [
  "serde",
  "static_assertions",
  "status-line",
+ "tempfile",
  "tokio",
 ]
 
