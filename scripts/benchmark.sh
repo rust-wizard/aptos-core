@@ -1,0 +1,1 @@
+cargo run --release -p aptos-executor-benchmark -- --block-executor-type aptos-vm-with-block-stm jmt-sharding-benchmark --num-accounts 1000 --num-operations 10000 --block-size 100 --data-dir /tmp/jmt-benchmark

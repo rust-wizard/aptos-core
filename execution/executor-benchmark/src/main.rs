@@ -14,6 +14,7 @@ use aptos_config::config::{
 };
 use aptos_executor_benchmark::{
     default_benchmark_features,
+    jmt_sharding_benchmark::benchmark_jmt_sharding,
     native::{
         aptos_vm_uncoordinated::AptosVMParallelUncoordinatedBlockExecutor,
         native_config::NativeConfig,
@@ -454,6 +455,23 @@ enum Command {
         #[clap(long, default_value_t = 1000000)]
         init_account_balance: u64,
     },
+    JmtShardingBenchmark {
+        /// Number of accounts to create for the benchmark
+        #[clap(long, default_value_t = 1000)]
+        num_accounts: usize,
+
+        /// Number of operations to perform in the benchmark
+        #[clap(long, default_value_t = 10000)]
+        num_operations: usize,
+
+        /// Block size for the benchmark
+        #[clap(long, default_value_t = 100)]
+        block_size: usize,
+
+        /// Data directory for the benchmark
+        #[clap(long, value_parser)]
+        data_dir: PathBuf,
+    },
 }
 
 fn get_init_features(
@@ -581,6 +599,30 @@ where
                     .pipeline_config(opt.storage_opt.enable_indexer_grpc),
                 Features::default(),
                 opt.use_keyless_accounts,
+            );
+        },
+        Command::JmtShardingBenchmark {
+            num_accounts,
+            num_operations,
+            block_size,
+            data_dir,
+        } => {
+            // Run JMT sharding benchmark with sharding enabled
+            benchmark_jmt_sharding(
+                num_accounts,
+                num_operations,
+                block_size,
+                data_dir.clone(),
+                true, // enable_storage_sharding
+            );
+            
+            // Run JMT sharding benchmark with sharding disabled for comparison
+            benchmark_jmt_sharding(
+                num_accounts,
+                num_operations,
+                block_size,
+                data_dir,
+                false, // enable_storage_sharding
             );
         },
     }

@@ -7,6 +7,7 @@ pub mod db_access;
 pub mod db_generator;
 mod db_reliable_submitter;
 mod indexer_grpc_waiter;
+pub mod jmt_sharding_benchmark;
 mod ledger_update_stage;
 pub mod measurements;
 mod metrics;
