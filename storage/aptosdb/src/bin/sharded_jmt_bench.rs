@@ -5,6 +5,8 @@ use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use rand::RngCore;
 use rand::SeedableRng;
 use std::sync::atomic::{AtomicU64, Ordering};
+use aptos_experimental_runtimes::thread_manager::THREAD_MANAGER;
+use rayon::prelude::*;
 
 fn bench_sharded_jmt_end2end(c: &mut Criterion) {
     let default_n: usize = 100_000;
@@ -142,5 +144,94 @@ fn bench_sharded_jmt_end2end(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_sharded_jmt_end2end);
+fn bench_merklize_parallel(c: &mut Criterion) {
+    let default_n: usize = 100_000;
+    let value_size: usize = 256;
+
+    let mut group = c.benchmark_group("sharded_jmt_merklize_parallel");
+    group.sample_size(10);
+
+    let tmpdir = tempfile::tempdir().expect("tempdir");
+    let db_path = tmpdir.path().to_path_buf();
+    let mut storage_paths = aptos_config::config::StorageDirPaths::from_path(&db_path);
+    let mut rocksdb_configs = aptos_config::config::RocksdbConfigs::default();
+    rocksdb_configs.enable_storage_sharding = true;
+
+    let (_ledger_db, _hot_state_merkle_db, state_merkle_db, _state_kv_db) =
+        crate::db::AptosDB::open_dbs(
+            &storage_paths,
+            rocksdb_configs,
+            None,
+            None,
+            false,
+            0,
+            false,
+        )
+    .expect("open_dbs");
+
+    use aptos_crypto::hash::HashValue;
+    use aptos_types::state_store::state_key::StateKey;
+    use aptos_storage_interface::jmt_update_refs;
+
+    let mut rng = rand::rngs::StdRng::seed_from_u64(0xBEEF);
+
+    // prepare per-shard updates
+    let mut per_shard: Vec<Vec<(HashValue, Option<(HashValue, StateKey)>)>> =
+        vec![Vec::new(); aptos_types::state_store::NUM_STATE_SHARDS];
+    for i in 0..default_n {
+        let mut id_bytes = [0u8; 8];
+        id_bytes[..8].copy_from_slice(&((i as u64).to_le_bytes()));
+        let sk = StateKey::raw(&id_bytes);
+        let key_hash = aptos_crypto::hash::CryptoHash::hash(&sk);
+
+        let mut v = vec![0u8; value_size];
+        rng.fill_bytes(&mut v);
+        let value_hash = HashValue::sha3_256_of(&v);
+
+        let shard = sk.get_shard_id();
+        per_shard[shard].push((key_hash, Some((value_hash, sk.clone()))));
+    }
+
+    let version = 1u64;
+
+    group.bench_function("merklize_parallel_N_100k", |b| {
+        b.iter(|| {
+            // Run parallel merklize similar to StateSnapshotCommitter::merklize
+            let (shard_root_nodes, batches_for_shards): (Vec<_>, Vec<_>) = THREAD_MANAGER
+                .get_non_exe_cpu_pool()
+                .install(|| {
+                    per_shard
+                        .par_iter()
+                        .enumerate()
+                        .map(|(shard_id, updates)| {
+                            let refs = jmt_update_refs(updates);
+                            state_merkle_db
+                                .merklize_value_set_for_shard(
+                                    shard_id,
+                                    refs,
+                                    None,
+                                    version,
+                                    None,
+                                    None,
+                                    None,
+                                )
+                                .expect("merklize shard")
+                        })
+                        .collect::<Vec<_>>()
+                        .into_iter()
+                        .unzip()
+                });
+
+            // calculate top levels (single-threaded path)
+            let (_root_hash, _leaf_count, _top_batch) = state_merkle_db
+                .calculate_top_levels(shard_root_nodes, version, None, None)
+                .expect("calculate_top_levels");
+        })
+    });
+
+    group.finish();
+}
+
+criterion_group!(benches, bench_sharded_jmt_end2end, bench_merklize_parallel);
 criterion_main!(benches);
+
