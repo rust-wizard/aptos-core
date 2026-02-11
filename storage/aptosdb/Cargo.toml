@@ -57,6 +57,8 @@ static_assertions = { workspace = true }
 status-line = { workspace = true }
 tokio = { workspace = true }
 criterion = "0.4"
+rand = "0.8"
+tempfile = "3.6"
 
 [dev-dependencies]
 aptos-block-executor = { workspace = true }

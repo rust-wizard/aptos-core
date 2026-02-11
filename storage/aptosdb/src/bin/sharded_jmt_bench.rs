@@ -7,6 +7,12 @@ use rand::SeedableRng;
 use std::sync::atomic::{AtomicU64, Ordering};
 use aptos_experimental_runtimes::thread_manager::THREAD_MANAGER;
 use rayon::prelude::*;
+use aptos_db::db::AptosDB;
+use aptos_db::ledger_db::LedgerDb;
+use aptos_db::state_merkle_db::StateMerkleDb;
+use aptos_db::state_kv_db::StateKvDb;
+use aptos_db::schema::state_value_by_key_hash::StateValueByKeyHashSchema;
+use tempfile;
 
 fn bench_sharded_jmt_end2end(c: &mut Criterion) {
     let default_n: usize = 100_000;
@@ -26,8 +32,13 @@ fn bench_sharded_jmt_end2end(c: &mut Criterion) {
     rocksdb_configs.enable_storage_sharding = true;
 
     // Open DBs (ledger_db, optional hot, state_merkle_db, state_kv_db)
-    let (_ledger_db, _hot_state_merkle_db, state_merkle_db, state_kv_db) =
-        crate::db::AptosDB::open_dbs(
+    let (_ledger_db, _hot_state_merkle_db, state_merkle_db, state_kv_db): (
+        LedgerDb,
+        Option<StateMerkleDb>,
+        StateMerkleDb,
+        StateKvDb,
+    ) =
+        AptosDB::open_dbs(
             &storage_paths,
             rocksdb_configs,
             None,
@@ -116,7 +127,7 @@ fn bench_sharded_jmt_end2end(c: &mut Criterion) {
                         let vbytes = &values[idx];
                         let sv = StateValue::from(vbytes.clone());
                         native_batch
-                            .put::<crate::schema::state_value_by_key_hash::StateValueByKeyHashSchema>(
+                            .put::<StateValueByKeyHashSchema>(
                                 &(*key_hash, version),
                                 &Some(sv),
                             )
@@ -157,8 +168,13 @@ fn bench_merklize_parallel(c: &mut Criterion) {
     let mut rocksdb_configs = aptos_config::config::RocksdbConfigs::default();
     rocksdb_configs.enable_storage_sharding = true;
 
-    let (_ledger_db, _hot_state_merkle_db, state_merkle_db, _state_kv_db) =
-        crate::db::AptosDB::open_dbs(
+    let (_ledger_db, _hot_state_merkle_db, state_merkle_db, _state_kv_db): (
+        LedgerDb,
+        Option<StateMerkleDb>,
+        StateMerkleDb,
+        StateKvDb,
+    ) =
+        AptosDB::open_dbs(
             &storage_paths,
             rocksdb_configs,
             None,
