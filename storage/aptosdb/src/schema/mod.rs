@@ -21,7 +21,7 @@ pub(crate) mod stale_node_index_cross_epoch;
 pub(crate) mod stale_state_value_index;
 pub(crate) mod stale_state_value_index_by_key_hash;
 pub(crate) mod state_value;
-pub(crate) mod state_value_by_key_hash;
+pub mod state_value_by_key_hash;
 pub(crate) mod transaction;
 pub(crate) mod transaction_accumulator;
 pub(crate) mod transaction_accumulator_root_hash;

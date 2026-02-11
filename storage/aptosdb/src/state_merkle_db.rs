@@ -144,7 +144,7 @@ impl StateMerkleDb {
         )
     }
 
-    pub(crate) fn commit(
+    pub fn commit(
         &self,
         version: Version,
         top_levels_batch: impl IntoRawBatch,

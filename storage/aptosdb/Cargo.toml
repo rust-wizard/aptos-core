@@ -56,9 +56,9 @@ serde = { workspace = true }
 static_assertions = { workspace = true }
 status-line = { workspace = true }
 tokio = { workspace = true }
-criterion = "0.4"
-rand = "0.8"
-tempfile = "3.6"
+criterion = { workspace = true }
+rand = { workspace = true }
+tempfile = { workspace = true }
 
 [dev-dependencies]
 aptos-block-executor = { workspace = true }
@@ -79,3 +79,8 @@ default = []
 fuzzing = ["proptest", "proptest-derive", "aptos-proptest-helpers", "aptos-temppath", "aptos-crypto/fuzzing", "aptos-jellyfish-merkle/fuzzing", "aptos-types/fuzzing", "aptos-executor-types/fuzzing", "aptos-schemadb/fuzzing", "aptos-scratchpad/fuzzing"]
 consensus-only-perf-test = []
 db-debugger = ["aptos-temppath", "clap", "crossbeam-channel", "owo-colors", "indicatif"]
+
+[[bench]]
+name = "shard"
+path = "benches/sharded_jmt_bench.rs"
+harness = false

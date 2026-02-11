@@ -17,23 +17,24 @@ pub mod backup;
 pub mod common;
 pub mod db;
 pub mod get_restore_handler;
+pub mod event_store;
+pub mod ledger_db;
 pub mod metrics;
+pub mod pruner;
+pub mod state_kv_db;
+pub mod state_merkle_db;
+pub mod state_store;
+pub mod transaction_store;
+pub mod utils;
+
 pub(crate) mod rocksdb_property_reporter;
 pub mod schema;
 pub mod state_restore;
-pub mod utils;
 
 #[cfg(feature = "db-debugger")]
 pub mod db_debugger;
 pub mod fast_sync_storage_wrapper;
 
 mod db_options;
-mod event_store;
-mod ledger_db;
 mod lru_node_cache;
-mod pruner;
-mod state_kv_db;
-mod state_merkle_db;
-mod state_store;
-mod transaction_store;
 mod versioned_node_cache;

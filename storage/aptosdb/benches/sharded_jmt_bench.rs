@@ -7,9 +7,10 @@ use rand::SeedableRng;
 use std::sync::atomic::{AtomicU64, Ordering};
 use aptos_experimental_runtimes::thread_manager::THREAD_MANAGER;
 use rayon::prelude::*;
-use crate::AptosDB;
-use crate::schema::state_value_by_key_hash::StateValueByKeyHashSchema;
+use aptos_db::AptosDB;
+use aptos_db::schema::state_value_by_key_hash::StateValueByKeyHashSchema;
 use tempfile;
+use aptos_schemadb::batch::WriteBatch;
 
 fn bench_sharded_jmt_end2end(c: &mut Criterion) {
     let default_n: usize = 100_000;
@@ -30,12 +31,12 @@ fn bench_sharded_jmt_end2end(c: &mut Criterion) {
 
     // Open DBs (ledger_db, optional hot, state_merkle_db, state_kv_db)
     let (_ledger_db, _hot_state_merkle_db, state_merkle_db, state_kv_db): (
-        crate::ledger_db::LedgerDb,
-        Option<crate::state_merkle_db::StateMerkleDb>,
-        crate::state_merkle_db::StateMerkleDb,
-        crate::state_kv_db::StateKvDb,
+        aptos_db::ledger_db::LedgerDb,
+        Option<aptos_db::state_merkle_db::StateMerkleDb>,
+        aptos_db::state_merkle_db::StateMerkleDb,
+        aptos_db::state_kv_db::StateKvDb,
     ) =
-        crate::AptosDB::open_dbs(
+        aptos_db::AptosDB::open_dbs(
             &storage_paths,
             rocksdb_configs,
             None,
@@ -166,12 +167,12 @@ fn bench_merklize_parallel(c: &mut Criterion) {
     rocksdb_configs.enable_storage_sharding = true;
 
     let (_ledger_db, _hot_state_merkle_db, state_merkle_db, _state_kv_db): (
-        crate::ledger_db::LedgerDb,
-        Option<crate::state_merkle_db::StateMerkleDb>,
-        crate::state_merkle_db::StateMerkleDb,
-        crate::state_kv_db::StateKvDb,
+        aptos_db::ledger_db::LedgerDb,
+        Option<aptos_db::state_merkle_db::StateMerkleDb>,
+        aptos_db::state_merkle_db::StateMerkleDb,
+        aptos_db::state_kv_db::StateKvDb,
     ) =
-        crate::AptosDB::open_dbs(
+        aptos_db::AptosDB::open_dbs(
             &storage_paths,
             rocksdb_configs,
             None,
@@ -247,4 +248,3 @@ fn bench_merklize_parallel(c: &mut Criterion) {
 
 criterion_group!(benches, bench_sharded_jmt_end2end, bench_merklize_parallel);
 criterion_main!(benches);
-
